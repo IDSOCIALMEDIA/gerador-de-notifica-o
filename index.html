@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerador de Notificação PIX</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <h1>Gerador de Notificação PIX</h1>
+
+    <div class="controles">
+        <div class="input-grupo">
+            <label for="appName">Nome do App</label>
+            <input type="text" id="appName" value="Banco Neon">
+        </div>
+        <div class="input-grupo">
+            <label for="pixAmount">Valor do PIX Recebido</label>
+            <input type="number" id="pixAmount" step="0.01" value="10.50">
+        </div>
+
+        <div class="input-grupo">
+            <label for="logoSelect">Escolha o Logo do App</label>
+            <select id="logoSelect">
+                </select>
+        </div>
+        
+        <div class="input-grupo">
+            <label for="delaySelect">Aguardar para aparecer (segundos)</label>
+            <select id="delaySelect">
+                <option value="5">5 segundos</option>
+                <option value="10">10 segundos</option>
+                <option value="15">15 segundos</option>
+                <option value="20">20 segundos</option>
+                <option value="25">25 segundos</option>
+                <option value="30">30 segundos</option>
+            </select>
+        </div>
+
+        <button id="generateBtn">Gerar Notificação</button>
+    </div>
+
+    <hr>
+
+    <h2>Resultado:</h2>
+    <div class="notification-wrapper">
+        <div class="notification" id="notification">
+            <img src="placeholder.png" alt="Logo" class="notify-logo" id="notifyLogo">
+            <div class="notify-content">
+                <span class="notify-app-name" id="notifyAppName">Nome do App</span>
+                <strong class="notify-title">PIX Recebido</strong>
+                <p class="notify-body" id="notifyBody">Você recebeu um PIX de R$ 0,00.</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
