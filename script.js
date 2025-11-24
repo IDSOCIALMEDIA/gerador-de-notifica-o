@@ -1,6 +1,13 @@
 document.addEventListener("DOMContentLoaded", () => {
     
-    // CONFIGURAÇÃO: Certifique-se que os arquivos existem na pasta 'logos'
+    // --- 0. REGISTRAR O SERVICE WORKER (OBRIGATÓRIO PARA ANDROID) ---
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('./sw.js')
+            .then(reg => console.log("Service Worker registrado!", reg))
+            .catch(err => console.log("Erro ao registrar SW:", err));
+    }
+
+    // --- 1. CONFIGURAÇÃO ---
     const logos = {
         "Nubank": "./logos/nubank.png",
         "Inter": "./logos/inter.png",
@@ -13,7 +20,6 @@ document.addEventListener("DOMContentLoaded", () => {
         "C6 Bank": "./logos/c6.png"
     };
 
-    // Elementos
     const btnGenerate = document.getElementById("btnGenerate");
     const btnPermission = document.getElementById("btnPermission");
     const selectLogo = document.getElementById("logoSelect");
@@ -26,40 +32,37 @@ document.addEventListener("DOMContentLoaded", () => {
         selectLogo.appendChild(opt);
     }
 
-    // --- FUNÇÃO 1: Checa Permissões ao Carregar ---
+    // --- 2. CHECAR PERMISSÕES ---
     function checkStatus() {
         if (!("Notification" in window)) {
-            alert("Seu navegador não suporta notificações web.");
+            alert("Navegador incompatível.");
             return;
         }
         
         if (Notification.permission === "granted") {
             btnPermission.style.display = "none";
-        } else if (Notification.permission === "denied") {
-            btnPermission.style.display = "block";
-            btnPermission.innerText = "❌ Bloqueado! Clique no cadeado do site p/ liberar";
-            btnPermission.disabled = true; // Usuário tem que ir na config do navegador
         } else {
             btnPermission.style.display = "block";
+            if(Notification.permission === "denied") {
+                btnPermission.innerText = "⚠️ Notificações Bloqueadas (Clique no cadeado)";
+            }
         }
     }
 
-    // --- FUNÇÃO 2: Pede Permissão ---
     btnPermission.addEventListener("click", () => {
         Notification.requestPermission().then(perm => {
+            checkStatus();
             if (perm === "granted") {
-                checkStatus();
-                // Tenta enviar uma notificação de teste silenciosa
-                new Notification("Teste", { body: "Notificações ativadas!" });
-            } else {
-                alert("Você precisa clicar em 'Permitir' para funcionar.");
+                // Tenta notificação simples de teste via SW
+                navigator.serviceWorker.ready.then(registration => {
+                    registration.showNotification("Notificações Ativadas!");
+                });
             }
         });
     });
 
-    // --- FUNÇÃO 3: Dispara a Notificação ---
+    // --- 3. DISPARAR NOTIFICAÇÃO ---
     btnGenerate.addEventListener("click", () => {
-        // 1. Coleta dados
         const bank = selectLogo.value;
         const sender = document.getElementById("senderName").value;
         const valRaw = parseFloat(document.getElementById("pixAmount").value);
@@ -67,45 +70,41 @@ document.addEventListener("DOMContentLoaded", () => {
         const delay = parseInt(document.getElementById("delaySelect").value) * 1000;
         const iconPath = logos[bank];
 
-        // 2. Atualiza Preview na tela
+        // Preview na tela
         document.getElementById("previewApp").innerText = bank;
         document.getElementById("previewLogo").src = iconPath;
         document.getElementById("previewBody").innerHTML = `Transferência de <strong>${sender}</strong><br>Valor: ${valFmt}`;
         document.getElementById("notificationPreview").style.opacity = "1";
 
-        // 3. Feedback no botão
+        // Trava botão
         btnGenerate.disabled = true;
-        btnGenerate.innerText = `Aguarde ${delay/1000}s (Saia da tela agora!)`;
+        btnGenerate.innerText = `Aguarde ${delay/1000}s (Bloqueie a tela!)`;
 
-        // 4. Temporizador
         setTimeout(() => {
-            
-            // Verifica permissão na hora H
             if (Notification.permission === "granted") {
-                try {
-                    // CRIA A NOTIFICAÇÃO REAL
-                    const n = new Notification(`Pix recebido: ${valFmt}`, {
-                        body: `Você recebeu uma transferência de ${sender} no ${bank}.`,
-                        icon: iconPath,
-                        vibrate: [200, 100, 200, 100, 200], // Vibração longa
-                        requireInteraction: true, // Tenta manter na tela até clicar
-                        timestamp: Date.now() // Força ser uma "nova" notificação sempre
-                    });
+                
+                // --- AQUI ESTÁ A CORREÇÃO MÁGICA ---
+                // Em vez de 'new Notification', usamos o Service Worker
+                navigator.serviceWorker.ready.then(registration => {
+                    try {
+                        registration.showNotification(`Pix recebido: ${valFmt}`, {
+                            body: `Você recebeu uma transferência de ${sender} no ${bank}.`,
+                            icon: iconPath,
+                            vibrate: [200, 100, 200, 100, 200],
+                            tag: 'pix-' + Date.now(), // Tag única para não agrupar
+                            timestamp: Date.now()
+                        });
+                    } catch (e) {
+                        alert("Erro no SW: " + e.message);
+                    }
+                });
 
-                    // Evento se o usuário clicar na notificação
-                    n.onclick = () => { window.focus(); n.close(); };
-
-                } catch (e) {
-                    alert("Erro técnico: O Android bloqueou o disparo. " + e.message);
-                }
             } else {
-                alert("Erro: Permissão de notificação não foi concedida.");
+                alert("Você precisa permitir as notificações no botão verde.");
             }
 
-            // Reseta botão
             btnGenerate.disabled = false;
             btnGenerate.innerText = "Agendar Notificação";
-
         }, delay);
     });
 
