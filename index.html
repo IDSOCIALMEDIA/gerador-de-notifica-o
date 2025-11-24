@@ -1,4 +1,16 @@
-<div class="controles">
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerador de Notificação PIX</title>
+    <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+
+    <h1>Gerador de Notificação PIX</h1>
+
+    <div class="controles">
         <div class="input-grupo">
             <label for="logoSelect">Banco (Ícone do App)</label>
             <select id="logoSelect">
@@ -16,7 +28,7 @@
         </div>
         
         <div class="input-grupo">
-            <label for="delaySelect">Aguardar (segundos)</label>
+            <label for="delaySelect">Aguardar para notificar</label>
             <select id="delaySelect">
                 <option value="2">2 segundos</option>
                 <option value="5" selected>5 segundos</option>
@@ -26,7 +38,27 @@
             </select>
         </div>
 
-        <button id="requestPermBtn" style="background-color: #28a745; margin-bottom: 10px; display: none;">Habilitar Notificações</button>
+        <button id="requestPermBtn" style="background-color: #28a745; margin-bottom: 10px; display: none;">
+            Habilitar Notificações no Celular
+        </button>
         
         <button id="generateBtn">Agendar Notificação</button>
     </div>
+
+    <hr>
+
+    <h2>Prévia Visual:</h2>
+    <div class="notification-wrapper">
+        <div class="notification" id="notification">
+            <img src="placeholder.png" alt="Logo" class="notify-logo" id="notifyLogo">
+            <div class="notify-content">
+                <span class="notify-app-name" id="notifyAppName">Nome do Banco</span>
+                <strong class="notify-title">PIX recebido</strong>
+                <p class="notify-body" id="notifyBody">Detalhes da transferência...</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="./script.js"></script>
+</body>
+</html>
