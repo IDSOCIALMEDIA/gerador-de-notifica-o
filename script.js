@@ -1,37 +1,36 @@
-// Aguarda o documento HTML carregar completamente
 document.addEventListener("DOMContentLoaded", () => {
 
-    // --- 1. BANCO DE DADOS DE LOGOS (Caminhos) ---
-    // É AQUI QUE VOCÊ DEVE ADICIONAR OS CAMINHOS
-    // Certifique-se que o caminho começa com './' e bate com a pasta (ex: 'logos')
-    // e o nome exato do arquivo (ex: 'neon.png').
+    // --- 1. CONFIGURAÇÃO DOS BANCOS ---
+    // Certifique-se de ter a pasta 'logos' com as imagens
     const logoMap = {
-        "Banco Neon": "./logos/neon.png",
         "Nubank": "./logos/nubank.png",
+        "Inter": "./logos/inter.png",
+        "Itaú": "./logos/itau.png",
+        "Banco do Brasil": "./logos/bb.png",
+        "Santander": "./logos/santander.png",
         "Caixa": "./logos/caixa.jpg",
-        "Banco do Brasil": "./logos/bb.png"
-        // Adicione quantos bancos quiser...
+        "Bradesco": "./logos/bradesco.png",
+        "Banco Neon": "./logos/neon.png"
     };
 
-    // --- 2. SELEÇÃO DOS ELEMENTOS ---
-    const appNameInput = document.getElementById("appName");
-    const pixAmountInput = document.getElementById("pixAmount");
+    // --- 2. ELEMENTOS DO DOM ---
     const logoSelect = document.getElementById("logoSelect");
-    const generateBtn = document.getElementById("generateBtn");
+    const senderNameInput = document.getElementById("senderName"); // NOVO
+    const pixAmountInput = document.getElementById("pixAmount");
     const delaySelect = document.getElementById("delaySelect");
+    const generateBtn = document.getElementById("generateBtn");
+    const requestPermBtn = document.getElementById("requestPermBtn");
 
-    const notification = document.getElementById("notification");
+    // Elementos da visualização na tela (preview)
+    const notificationPreview = document.getElementById("notification");
     const notifyLogo = document.getElementById("notifyLogo");
     const notifyAppName = document.getElementById("notifyAppName");
     const notifyBody = document.getElementById("notifyBody");
 
-    // --- 3. FUNÇÃO PARA PREENCHER O SELETOR DE LOGOS ---
+    // --- 3. PREENCHER SELETOR ---
     function populateLogoSelector() {
-        const bankNames = Object.keys(logoMap);
-        
-        logoSelect.innerHTML = ""; // Limpa opções padrão
-
-        bankNames.forEach(name => {
+        logoSelect.innerHTML = "";
+        Object.keys(logoMap).forEach(name => {
             const option = document.createElement("option");
             option.value = name;
             option.textContent = name;
@@ -39,44 +38,76 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // --- 4. FUNÇÃO PRINCIPAL DE ATUALIZAÇÃO ---
-    function updateNotification() {
-        // Pega o nome do banco do seletor
-        const selectedBankName = logoSelect.value;
-        const appName = selectedBankName; 
-
-        // Pega e formata o valor do PIX
-        const pixAmount = parseFloat(pixAmountInput.value) || 0;
-        const formattedAmount = new Intl.NumberFormat('pt-BR', {
-            style: 'currency',
-            currency: 'BRL'
-        }).format(pixAmount);
-
-        // Atualiza os textos
-        appNameInput.value = appName; // Atualiza o campo de input
-        notifyAppName.innerText = appName;
-        notifyBody.innerText = `Você recebeu um PIX de ${formattedAmount}.`;
-
-        // Lida com a imagem (Logo)
-        const logoPath = logoMap[selectedBankName]; // Pega o caminho da imagem
-        if (logoPath) {
-            notifyLogo.src = logoPath; // Define o 'src' da imagem para o caminho do arquivo
-        } else {
-            notifyLogo.src = "placeholder.png"; // Imagem padrão
+    // --- 4. GERENCIAR PERMISSÃO DE NOTIFICAÇÃO ---
+    function checkPermission() {
+        if (!("Notification" in window)) {
+            alert("Este navegador não suporta notificações de sistema.");
+            return;
         }
-        
-        // Aplica o Atraso (Delay)
-        const delayInSeconds = parseInt(delaySelect.value, 10);
-        const delayInMilliseconds = delayInSeconds * 1000;
 
-        notification.style.opacity = "0"; // Esconde
-
-        setTimeout(() => {
-            notification.style.opacity = "1"; // Mostra
-        }, delayInMilliseconds);
+        if (Notification.permission !== "granted") {
+            requestPermBtn.style.display = "block"; // Mostra botão verde se não tiver permissão
+        } else {
+            requestPermBtn.style.display = "none";
+        }
     }
 
-    // --- 5. INICIALIZAÇÃO ---
-    populateLogoSelector(); // Preenche o menu dropdown assim que a página carrega
-    generateBtn.addEventListener("click", updateNotification);
+    requestPermBtn.addEventListener("click", () => {
+        Notification.requestPermission().then(permission => {
+            if (permission === "granted") {
+                requestPermBtn.style.display = "none";
+                alert("Permissão concedida! Agora você receberá as notificações reais.");
+            }
+        });
+    });
+
+    // --- 5. FUNÇÃO PRINCIPAL ---
+    function scheduleNotification() {
+        // Coleta dados
+        const bankName = logoSelect.value;
+        const senderName = senderNameInput.value;
+        const rawAmount = parseFloat(pixAmountInput.value) || 0;
+        const amount = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(rawAmount);
+        const logoPath = logoMap[bankName];
+        
+        // Atualiza o Preview na tela (HTML)
+        notifyAppName.innerText = bankName;
+        notifyBody.innerHTML = `Transferência recebida<br>Você recebeu um Pix de <strong>${senderName}</strong> no valor de ${amount}`;
+        notifyLogo.src = logoPath || "placeholder.png";
+        
+        // Feedback visual que foi agendado
+        generateBtn.innerText = "Aguardando...";
+        generateBtn.disabled = true;
+
+        // Tempo de espera
+        const delay = parseInt(delaySelect.value) * 1000;
+
+        setTimeout(() => {
+            // 1. Mostra o Preview na página
+            notificationPreview.style.opacity = "1";
+
+            // 2. Dispara a Notificação REAL do Sistema
+            if (Notification.permission === "granted") {
+                // Cria a notificação nativa
+                new Notification(`Pix recebido: ${amount}`, {
+                    body: `Você recebeu uma transferência de ${senderName} no ${bankName}.`,
+                    icon: logoPath, // Tenta usar o ícone do banco na notificação
+                    vibrate: [200, 100, 200], // Vibra o celular (se suportado)
+                    tag: "pix-notification" // Evita spam de muitas notificações iguais
+                });
+            } else {
+                alert("Notificação bloqueada pelo navegador. Clique no botão verde para habilitar.");
+            }
+
+            // Reseta botão
+            generateBtn.innerText = "Agendar Notificação";
+            generateBtn.disabled = false;
+
+        }, delay);
+    }
+
+    // Inicialização
+    populateLogoSelector();
+    checkPermission();
+    generateBtn.addEventListener("click", scheduleNotification);
 });
