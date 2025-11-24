@@ -2,59 +2,62 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gerador de Notificação PIX</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#ffffff">
+    <title>Notificador PIX Real</title>
     <link rel="stylesheet" href="./style.css">
 </head>
 <body>
 
-    <h1>Gerador de Notificação PIX</h1>
+    <div class="container">
+        <h1>Simulador de Notificação</h1>
+        <p class="subtitle">Gere notificações reais na barra de status</p>
 
-    <div class="controles">
-        <div class="input-grupo">
-            <label for="logoSelect">Banco (Ícone do App)</label>
-            <select id="logoSelect">
+        <div class="card">
+            <div class="input-group">
+                <label>Banco (App)</label>
+                <select id="logoSelect"></select>
+            </div>
+
+            <div class="input-group">
+                <label>Quem enviou (Nome)</label>
+                <input type="text" id="senderName" value="Cliente Exemplo Ltda">
+            </div>
+
+            <div class="input-group">
+                <label>Valor (R$)</label>
+                <input type="number" id="pixAmount" inputmode="decimal" value="150.00">
+            </div>
+
+            <div class="input-group">
+                <label>Tempo para disparar</label>
+                <select id="delaySelect">
+                    <option value="5" selected>5 segundos</option>
+                    <option value="10">10 segundos</option>
+                    <option value="15">15 segundos</option>
+                    <option value="30">30 segundos</option>
                 </select>
+            </div>
+
+            <button id="btnPermission" class="btn-perm" style="display:none;">
+                🔓 Liberar Notificações no Celular
+            </button>
+
+            <button id="btnGenerate" class="btn-primary">
+                Agendar Notificação
+            </button>
+            <p class="hint">Dica: Após clicar, bloqueie a tela do celular.</p>
         </div>
 
-        <div class="input-grupo">
-            <label for="senderName">Nome do Pagador (Quem enviou)</label>
-            <input type="text" id="senderName" value="Cliente Exemplo Ltda">
-        </div>
-
-        <div class="input-grupo">
-            <label for="pixAmount">Valor do PIX (R$)</label>
-            <input type="number" id="pixAmount" step="0.01" value="150.00">
-        </div>
-        
-        <div class="input-grupo">
-            <label for="delaySelect">Aguardar para notificar</label>
-            <select id="delaySelect">
-                <option value="2">2 segundos</option>
-                <option value="5" selected>5 segundos</option>
-                <option value="10">10 segundos</option>
-                <option value="15">15 segundos</option>
-                <option value="30">30 segundos</option>
-            </select>
-        </div>
-
-        <button id="requestPermBtn" style="background-color: #28a745; margin-bottom: 10px; display: none;">
-            Habilitar Notificações no Celular
-        </button>
-        
-        <button id="generateBtn">Agendar Notificação</button>
-    </div>
-
-    <hr>
-
-    <h2>Prévia Visual:</h2>
-    <div class="notification-wrapper">
-        <div class="notification" id="notification">
-            <img src="placeholder.png" alt="Logo" class="notify-logo" id="notifyLogo">
-            <div class="notify-content">
-                <span class="notify-app-name" id="notifyAppName">Nome do Banco</span>
-                <strong class="notify-title">PIX recebido</strong>
-                <p class="notify-body" id="notifyBody">Detalhes da transferência...</p>
+        <div class="preview-area">
+            <h3>Prévia Visual:</h3>
+            <div class="notification-box" id="notificationPreview">
+                <img src="" id="previewLogo" class="logo-icon" alt="Bank Logo">
+                <div class="text-content">
+                    <span id="previewApp" class="app-name">Nubank</span>
+                    <span class="title">PIX recebido</span>
+                    <span id="previewBody" class="body-text">...</span>
+                </div>
             </div>
         </div>
     </div>
