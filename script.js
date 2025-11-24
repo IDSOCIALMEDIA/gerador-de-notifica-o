@@ -1,129 +1,113 @@
 document.addEventListener("DOMContentLoaded", () => {
-
-    // --- 1. CONFIGURAÇÃO DOS BANCOS ---
-    // ATENÇÃO: Você precisa ter a pasta "logos" com essas imagens dentro.
-    const logoMap = {
+    
+    // CONFIGURAÇÃO: Certifique-se que os arquivos existem na pasta 'logos'
+    const logos = {
         "Nubank": "./logos/nubank.png",
         "Inter": "./logos/inter.png",
         "Itaú": "./logos/itau.png",
-        "Banco do Brasil": "./logos/bb.png",
+        "Bradesco": "./logos/bradesco.png",
         "Santander": "./logos/santander.png",
         "Caixa": "./logos/caixa.jpg",
-        "Bradesco": "./logos/bradesco.png",
+        "Banco do Brasil": "./logos/bb.png",
         "Banco Neon": "./logos/neon.png",
         "C6 Bank": "./logos/c6.png"
     };
 
-    // --- 2. SELEÇÃO DE ELEMENTOS ---
-    const logoSelect = document.getElementById("logoSelect");
-    const senderNameInput = document.getElementById("senderName");
-    const pixAmountInput = document.getElementById("pixAmount");
-    const delaySelect = document.getElementById("delaySelect");
-
-    const generateBtn = document.getElementById("generateBtn");
-    const requestPermBtn = document.getElementById("requestPermBtn");
-
-    // Elementos da Prévia (Preview)
-    const notificationPreview = document.getElementById("notification");
-    const notifyLogo = document.getElementById("notifyLogo");
-    const notifyAppName = document.getElementById("notifyAppName");
-    const notifyBody = document.getElementById("notifyBody");
-
-    // --- 3. PREENCHER O MENU DE BANCOS ---
-    function populateLogoSelector() {
-        logoSelect.innerHTML = "";
-        Object.keys(logoMap).forEach(name => {
-            const option = document.createElement("option");
-            option.value = name;
-            option.textContent = name;
-            logoSelect.appendChild(option);
-        });
+    // Elementos
+    const btnGenerate = document.getElementById("btnGenerate");
+    const btnPermission = document.getElementById("btnPermission");
+    const selectLogo = document.getElementById("logoSelect");
+    
+    // Preenche o Select
+    for (let bank in logos) {
+        let opt = document.createElement("option");
+        opt.value = bank;
+        opt.innerText = bank;
+        selectLogo.appendChild(opt);
     }
 
-    // --- 4. PEDIR PERMISSÃO AO CELULAR ---
-    function checkPermission() {
+    // --- FUNÇÃO 1: Checa Permissões ao Carregar ---
+    function checkStatus() {
         if (!("Notification" in window)) {
-            // Se o navegador for muito antigo
+            alert("Seu navegador não suporta notificações web.");
             return;
         }
-
-        if (Notification.permission !== "granted") {
-            requestPermBtn.style.display = "block"; // Mostra o botão verde
+        
+        if (Notification.permission === "granted") {
+            btnPermission.style.display = "none";
+        } else if (Notification.permission === "denied") {
+            btnPermission.style.display = "block";
+            btnPermission.innerText = "❌ Bloqueado! Clique no cadeado do site p/ liberar";
+            btnPermission.disabled = true; // Usuário tem que ir na config do navegador
         } else {
-            requestPermBtn.style.display = "none"; // Já tem permissão
+            btnPermission.style.display = "block";
         }
     }
 
-    // Quando clicar no botão verde de permissão
-    requestPermBtn.addEventListener("click", () => {
-        Notification.requestPermission().then(permission => {
-            if (permission === "granted") {
-                requestPermBtn.style.display = "none";
-                alert("Permissão concedida! As notificações aparecerão na barra de status.");
+    // --- FUNÇÃO 2: Pede Permissão ---
+    btnPermission.addEventListener("click", () => {
+        Notification.requestPermission().then(perm => {
+            if (perm === "granted") {
+                checkStatus();
+                // Tenta enviar uma notificação de teste silenciosa
+                new Notification("Teste", { body: "Notificações ativadas!" });
+            } else {
+                alert("Você precisa clicar em 'Permitir' para funcionar.");
             }
         });
     });
 
-    // --- 5. FUNÇÃO QUE CRIA A NOTIFICAÇÃO ---
-    function scheduleNotification() {
-        // Coleta os dados digitados
-        const bankName = logoSelect.value;
-        const senderName = senderNameInput.value;
-        const rawAmount = parseFloat(pixAmountInput.value) || 0;
+    // --- FUNÇÃO 3: Dispara a Notificação ---
+    btnGenerate.addEventListener("click", () => {
+        // 1. Coleta dados
+        const bank = selectLogo.value;
+        const sender = document.getElementById("senderName").value;
+        const valRaw = parseFloat(document.getElementById("pixAmount").value);
+        const valFmt = valRaw.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        const delay = parseInt(document.getElementById("delaySelect").value) * 1000;
+        const iconPath = logos[bank];
 
-        // Formata dinheiro (R$ 1.000,00)
-        const formattedAmount = new Intl.NumberFormat('pt-BR', {
-            style: 'currency',
-            currency: 'BRL'
-        }).format(rawAmount);
+        // 2. Atualiza Preview na tela
+        document.getElementById("previewApp").innerText = bank;
+        document.getElementById("previewLogo").src = iconPath;
+        document.getElementById("previewBody").innerHTML = `Transferência de <strong>${sender}</strong><br>Valor: ${valFmt}`;
+        document.getElementById("notificationPreview").style.opacity = "1";
 
-        // Caminho da imagem
-        const logoPath = logoMap[bankName];
+        // 3. Feedback no botão
+        btnGenerate.disabled = true;
+        btnGenerate.innerText = `Aguarde ${delay/1000}s (Saia da tela agora!)`;
 
-        // --- Atualiza a Prévia na Tela (O desenho no site) ---
-        notifyAppName.innerText = bankName;
-        // Monta o texto igual ao PIX real
-        notifyBody.innerHTML = `Você recebeu uma transferência de <strong>${senderName}</strong> no valor de ${formattedAmount}`;
-        notifyLogo.src = logoPath || "placeholder.png";
-
-        // Muda botão para "Aguardando..."
-        generateBtn.innerText = `Aguardando ${delaySelect.value}s...`;
-        generateBtn.disabled = true;
-        notificationPreview.style.opacity = "0"; // Esconde prévia anterior
-
-        // Calcula o tempo
-        const delayInMs = parseInt(delaySelect.value) * 1000;
-
-        // --- ESPERA E DISPARA ---
+        // 4. Temporizador
         setTimeout(() => {
-            // 1. Mostra o desenho na tela do site
-            notificationPreview.style.opacity = "1";
-
-            // 2. Tenta disparar a Notificação REAL do Sistema
+            
+            // Verifica permissão na hora H
             if (Notification.permission === "granted") {
+                try {
+                    // CRIA A NOTIFICAÇÃO REAL
+                    const n = new Notification(`Pix recebido: ${valFmt}`, {
+                        body: `Você recebeu uma transferência de ${sender} no ${bank}.`,
+                        icon: iconPath,
+                        vibrate: [200, 100, 200, 100, 200], // Vibração longa
+                        requireInteraction: true, // Tenta manter na tela até clicar
+                        timestamp: Date.now() // Força ser uma "nova" notificação sempre
+                    });
 
-                // Cria a notificação nativa (Barra de tarefas/status)
-                new Notification(`Pix recebido: ${formattedAmount}`, {
-                    body: `Você recebeu uma transferência de ${senderName} no ${bankName}.`,
-                    icon: logoPath,
-                    vibrate: [200, 100, 200],
-                    timestamp: Date.now() // Isso força o sistema a ver como "agora"
-                });
+                    // Evento se o usuário clicar na notificação
+                    n.onclick = () => { window.focus(); n.close(); };
 
-            } else if (Notification.permission !== "denied") {
-                // Se o usuário esqueceu de habilitar
-                alert("Para ver a notificação fora do site, clique em 'Habilitar Notificações' primeiro.");
+                } catch (e) {
+                    alert("Erro técnico: O Android bloqueou o disparo. " + e.message);
+                }
+            } else {
+                alert("Erro: Permissão de notificação não foi concedida.");
             }
 
-            // Reseta o botão
-            generateBtn.innerText = "Agendar Notificação";
-            generateBtn.disabled = false;
+            // Reseta botão
+            btnGenerate.disabled = false;
+            btnGenerate.innerText = "Agendar Notificação";
 
-        }, delayInMs);
-    }
+        }, delay);
+    });
 
-    // Roda ao iniciar
-    populateLogoSelector();
-    checkPermission();
-    generateBtn.addEventListener("click", scheduleNotification);
+    checkStatus();
 });
