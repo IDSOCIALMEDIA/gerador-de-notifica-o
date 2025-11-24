@@ -19,7 +19,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const senderNameInput = document.getElementById("senderName");
     const pixAmountInput = document.getElementById("pixAmount");
     const delaySelect = document.getElementById("delaySelect");
-    
+
     const generateBtn = document.getElementById("generateBtn");
     const requestPermBtn = document.getElementById("requestPermBtn");
 
@@ -70,7 +70,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const bankName = logoSelect.value;
         const senderName = senderNameInput.value;
         const rawAmount = parseFloat(pixAmountInput.value) || 0;
-        
+
         // Formata dinheiro (R$ 1.000,00)
         const formattedAmount = new Intl.NumberFormat('pt-BR', {
             style: 'currency',
@@ -85,7 +85,7 @@ document.addEventListener("DOMContentLoaded", () => {
         // Monta o texto igual ao PIX real
         notifyBody.innerHTML = `Você recebeu uma transferência de <strong>${senderName}</strong> no valor de ${formattedAmount}`;
         notifyLogo.src = logoPath || "placeholder.png";
-        
+
         // Muda botão para "Aguardando..."
         generateBtn.innerText = `Aguardando ${delaySelect.value}s...`;
         generateBtn.disabled = true;
@@ -101,13 +101,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
             // 2. Tenta disparar a Notificação REAL do Sistema
             if (Notification.permission === "granted") {
-                
+
                 // Cria a notificação nativa (Barra de tarefas/status)
                 new Notification(`Pix recebido: ${formattedAmount}`, {
                     body: `Você recebeu uma transferência de ${senderName} no ${bankName}.`,
-                    icon: logoPath, // Tenta usar o ícone do banco
-                    vibrate: [200, 100, 200], // Vibração
-                    tag: "pix-notification"
+                    icon: logoPath,
+                    vibrate: [200, 100, 200],
+                    timestamp: Date.now() // Isso força o sistema a ver como "agora"
                 });
 
             } else if (Notification.permission !== "denied") {
